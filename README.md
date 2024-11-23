@@ -1,1 +1,1 @@
-pip install ttkbootstrap pillow easyocr pandas numpy openpyxl pywin32
+pip install ttkbootstrap pillow easyocr pandas numpy openpyxl

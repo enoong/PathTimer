@@ -103,10 +103,12 @@ class ScreenCaptureApp:
         # DPI 스케일링 보정 설정
         user32 = ctypes.windll.user32
         user32.SetProcessDPIAware()
-        self.screen_x = user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
-        self.screen_y = user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
+
+        # 전체 가상 스크린의 크기 가져오기
         self.screen_width = user32.GetSystemMetrics(78)  # SM_CXVIRTUALSCREEN
         self.screen_height = user32.GetSystemMetrics(79)  # SM_CYVIRTUALSCREEN
+        self.screen_x = user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
+        self.screen_y = user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
 
         self.excel_path = None
         self.start_time = None
@@ -185,34 +187,39 @@ class ScreenCaptureApp:
                                                     outline='green', width=2)
 
     def end_selection(self, event):
-        # 드래그 종료 후 영역 캡처 (절대 좌표로 변경, 화면 오프셋 고려)
+        # 드래그 종료 후 영역 캡처
         end_x = event.x_root
         end_y = event.y_root
-        x1 = min(self.start_x, end_x) + self.screen_x
-        y1 = min(self.start_y, end_y) + self.screen_y
-        x2 = max(self.start_x, end_x) + self.screen_x
-        y2 = max(self.start_y, end_y) + self.screen_y
+
+        # 실제 화면 좌표 계산
+        x1 = min(self.start_x, end_x)
+        y1 = min(self.start_y, end_y)
+        x2 = max(self.start_x, end_x)
+        y2 = max(self.start_y, end_y)
 
         # 오버레이 창 제거
         self.overlay.destroy()
 
-        # 지정한 영역을 캡처 (이미지 저장 없이 바로 메모리로 가져옴)
+        # 지정한 영역을 캡처
         time.sleep(0.1)  # 잠시 대기 후 캡처 수행
-        self.root.deiconify()  # 루트 창을 캡처 전에 복원해서 영향을 없앰
-        screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))
+        self.root.deiconify()  # 루트 창을 캡처 전에 복원
 
-        # OCR을 사용하여 이미지에서 텍스트 추출 (EasyOCR 사용)
+        # 스크린 캡처 수행
+        try:
+            screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
+        except Exception as e:
+            print(f"Screenshot error: {e}")
+            return
+
+        # OCR 처리 및 나머지 코드는 동일
         text_results = self.reader.readtext(np.array(screenshot))
         text = " ".join([result[1] for result in text_results])
 
-        # 추출된 텍스트를 실행창에 표시
         self.text_display.delete(1.0, ttk.END)
-        #self.text_display.insert(ttk.END, text)
         self.text_display.tag_configure("center", justify="center")
         self.text_display.insert(ttk.END, text)
         self.text_display.tag_add("center", "1.0", "end")
 
-        # 텍스트를 엑셀 파일의 ID 열에 저장 (파일이 없으면 생성)
         if text.strip():
             self.current_id = text.strip()
             self.save_text_to_excel(self.current_id)

@@ -93,6 +93,19 @@ class ScreenCaptureApp:
         self.second_start_button = ttk.Button(root, text="2nd Start", width=8, command=self.second_start_timer, style="Green.TButton")
         self.second_start_button.grid(row=5, column=0, pady=10)
 
+        # 체크박스 추가
+        self.always_on_top_var = ttk.BooleanVar(value=True)  # 초기값을 True로 설정
+        self.always_on_top_checkbox = ttk.Checkbutton(
+            root,
+            text="Always on Top",
+            variable=self.always_on_top_var,
+            command=self.toggle_always_on_top
+        )
+        self.always_on_top_checkbox.grid(row=6, column=0, columnspan=2, pady=(0, 5))
+
+        # 초기 상태를 항상 위로 설정
+        self.root.attributes('-topmost', True)
+
         # 경과 시간 레이블 생성 (2nd Start)
         self.second_elapsed_time_label = ttk.Label(root, text="00:00", font=("Arial", 20), anchor="center")
         self.second_elapsed_time_label.grid(row=5, column=1, pady=10)
@@ -333,6 +346,12 @@ class ScreenCaptureApp:
             self.second_elapsed_time_label.config(text=f"{elapsed_time_str}")
             self.root.after(1000, self.update_second_elapsed_time)
 
+    def toggle_always_on_top(self):
+        """체크박스 상태에 따라 창을 항상 위에 표시하거나 해제"""
+        if self.always_on_top_var.get():
+            self.root.attributes('-topmost', True)
+        else:
+            self.root.attributes('-topmost', False)
 
 if __name__ == "__main__":
     root = ttk.Window(themename="flatly")  # 또는 themename="flatly"
